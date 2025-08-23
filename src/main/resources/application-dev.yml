@@ -60,11 +60,16 @@ spring:
     path: /graphql
     websocket:
       path: /graphql-ws
+    playground:
+      enabled: true
+      endpoint: /graphql
     graphiql:
       enabled: true
       path: /graphiql
       subscriptions:
         path: /graphql-ws
+    query-depth: 15
+    query-complexity: 200
 
 # ===================================================================
 # JWT & SECURITY

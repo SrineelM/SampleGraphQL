@@ -23,6 +23,11 @@ spring:
     path: /graphql
     websocket:
       path: /graphql
+    playground:
+      enabled: true
+      endpoint: /graphql
+    query-depth: 15
+    query-complexity: 200
 
 server:
   port: 8080

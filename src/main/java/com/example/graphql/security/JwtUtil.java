@@ -14,8 +14,12 @@ import org.springframework.stereotype.Component;
 @Component
 public class JwtUtil {
 
-    private static final String SECRET_KEY = "your-32-byte-secret-key-should-be-long-enough!"; // Use env/config
-    private static final SecretKey KEY = Keys.hmacShaKeyFor(SECRET_KEY.getBytes());
+    @Value("${jwt.secret:your-32-byte-secret-key-should-be-long-enough!}")
+    private String secretKey;
+    
+    private SecretKey getKey() {
+        return Keys.hmacShaKeyFor(secretKey.getBytes());
+    }
 
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);
@@ -27,7 +31,7 @@ public class JwtUtil {
     }
 
     private Claims extractAllClaims(String token) {
-        return Jwts.parser().verifyWith(KEY).build().parseSignedClaims(token).getPayload();
+        return Jwts.parser().verifyWith(getKey()).build().parseSignedClaims(token).getPayload();
     }
 
     public boolean validateToken(String token, org.springframework.security.core.userdetails.UserDetails userDetails) {
@@ -44,7 +48,7 @@ public class JwtUtil {
                 .subject(userDetails.getUsername())
                 .issuedAt(new Date(System.currentTimeMillis()))
                 .expiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 10)) // 10h
-                .signWith(KEY)
+                .signWith(getKey())
                 .compact();
     }
 }

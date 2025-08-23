@@ -16,17 +16,9 @@ import reactor.core.publisher.Flux;
 @Controller
 public class GraphQLController {
 
-    /**
-     * Main GraphQL controller.
-     * Handles queries, mutations, and subscriptions for users and posts.
-     */
     private final UserService userService;
     private final PostService postService;
 
-    /**
-     * Main GraphQL controller.
-     * Handles queries, mutations, and subscriptions for users and posts.
-     */
     public GraphQLController(UserService userService, PostService postService) {
         this.userService = userService;
         this.postService = postService;
@@ -61,17 +53,20 @@ public class GraphQLController {
     // --- User mutations ---
     @MutationMapping
     public User createUser(
-            @Argument String username, @Argument String email, @Argument String password, @Argument String role) {
+            @Argument @jakarta.validation.Valid String username,
+            @Argument @jakarta.validation.Valid String email,
+            @Argument @jakarta.validation.Valid String password,
+            @Argument @jakarta.validation.Valid String role) {
         return userService.createUser(username, email, password, role);
     }
 
     @MutationMapping
     public User updateUser(
             @Argument Long id,
-            @Argument String username,
-            @Argument String email,
-            @Argument String password,
-            @Argument String role) {
+            @Argument @jakarta.validation.Valid String username,
+            @Argument @jakarta.validation.Valid String email,
+            @Argument @jakarta.validation.Valid String password,
+            @Argument @jakarta.validation.Valid String role) {
         return userService.updateUserGraphQL(id, username, email, password, role);
     }
 
@@ -113,12 +108,12 @@ public class GraphQLController {
 
     // --- Post mutations ---
     @MutationMapping
-    public Mono<Post> createPost(@Argument String title, @Argument String content, @Argument String authorEmail) {
+    public Mono<Post> createPost(@Argument @jakarta.validation.Valid String title, @Argument @jakarta.validation.Valid String content, @Argument @jakarta.validation.Valid String authorEmail) {
         return postService.createPostReactive(title, content, authorEmail);
     }
 
     @MutationMapping
-    public Mono<Post> updatePost(@Argument Long id, @Argument String title, @Argument String content) {
+    public Mono<Post> updatePost(@Argument Long id, @Argument @jakarta.validation.Valid String title, @Argument @jakarta.validation.Valid String content) {
         return postService.updatePostReactive(id, title, content);
     }
 

@@ -44,6 +44,8 @@ spring:
   graphql:
     graphiql:
       enabled: false
+    query-depth: 15
+    query-complexity: 200
 
 # All JWT secrets and expirations must be provided via environment variables.
 jwt:

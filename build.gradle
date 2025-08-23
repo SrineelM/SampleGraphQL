@@ -80,6 +80,9 @@ dependencies {
     testImplementation 'org.awaitility:awaitility:4.2.1'
     // JsonPath: JSON query assertions
     testImplementation 'com.jayway.jsonpath:json-path:2.9.0'
+
+    // GraphQL Playground: API exploration
+    implementation 'com.graphql-java:graphql-java-spring-boot-starter-playground:1.0.10'
 }
 
 spotless {

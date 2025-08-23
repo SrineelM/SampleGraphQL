@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.security.core.userdetails.ReactiveUserDetailsService;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.Flux;
@@ -15,6 +16,17 @@ import reactor.core.scheduler.Schedulers;
 
 @Service
 public class UserService implements ReactiveUserDetailsService {
+
+    private static final Logger logger = LoggerFactory.getLogger(UserService.class);
+
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
+
+    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+        this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
+    }
+
     // --- Reactive versions ---
     public Mono<List<User>> getAllUsersReactive() {
         return Mono.fromCallable(() -> userRepository.findAll())
@@ -59,7 +71,8 @@ public class UserService implements ReactiveUserDetailsService {
             } catch (IllegalArgumentException e) {
                 throw new IllegalArgumentException("Invalid role: " + role);
             }
-            User user = new User(username, email, password, userRole);
+            String encodedPassword = passwordEncoder.encode(password);
+            User user = new User(username, email, encodedPassword, userRole);
             return userRepository.save(user);
         }).subscribeOn(Schedulers.boundedElastic());
     }
@@ -68,10 +81,10 @@ public class UserService implements ReactiveUserDetailsService {
         return Mono.fromCallable(() -> {
             User user = userRepository.findById(id)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with ID: " + id));
-            user.setUsername(username);
-            user.setEmail(email);
-            user.setPassword(password);
-            user.setRole(User.Role.valueOf(role));
+            if (username != null) user.setUsername(username);
+            if (email != null) user.setEmail(email);
+            if (password != null) user.setPassword(passwordEncoder.encode(password));
+            if (role != null) user.setRole(User.Role.valueOf(role));
             return userRepository.save(user);
         }).subscribeOn(Schedulers.boundedElastic());
     }
@@ -84,18 +97,6 @@ public class UserService implements ReactiveUserDetailsService {
             userRepository.deleteById(id);
             return true;
         }).subscribeOn(Schedulers.boundedElastic());
-    }
-
-/**
- * Service for user-related business logic and database operations.
- * Provides both blocking and reactive methods.
- */
-    private static final Logger logger = LoggerFactory.getLogger(UserService.class);
-
-    private final UserRepository userRepository;
-
-    public UserService(UserRepository userRepository) {
-        this.userRepository = userRepository;
     }
 
     @Override
@@ -152,7 +153,8 @@ public class UserService implements ReactiveUserDetailsService {
         } catch (IllegalArgumentException e) {
             throw new IllegalArgumentException("Invalid role: " + role);
         }
-        User user = new User(username, email, password, userRole);
+        String encodedPassword = passwordEncoder.encode(password);
+        User user = new User(username, email, encodedPassword, userRole);
         return userRepository.save(user);
     }
 
@@ -162,7 +164,7 @@ public class UserService implements ReactiveUserDetailsService {
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with ID: " + id));
         if (username != null) user.setUsername(username);
         if (email != null) user.setEmail(email);
-        if (password != null) user.setPassword(password);
+        if (password != null) user.setPassword(passwordEncoder.encode(password));
         if (role != null) user.setRole(User.Role.valueOf(role));
         return userRepository.save(user);
     }

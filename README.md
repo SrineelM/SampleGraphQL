@@ -17,13 +17,13 @@ SampleGraphQL is a modern Spring Boot 3 application demonstrating a robust Graph
 - **Docker**: App and Redis can be run in Docker. See `Dockerfile` and below for details.
 
 ## Features
-- GraphQL API for users and posts
-- JWT-based authentication and authorization
-- Role-based access control (USER, ADMIN, MODERATOR)
-- Redis caching for performance
-- Resilience4j for circuit breaking, rate limiting, and retries
-- H2 in-memory database for development
-- Real-time subscriptions (WebSocket)
+- Spring Boot 3.x, GraphQL API, WebFlux, JPA, Security, JWT
+- GraphQL Playground enabled for API exploration (`/graphql` endpoint)
+- Query depth and complexity limits for security (configurable in `application.yml`)
+- Rate limiting, circuit breaking, and metrics (Resilience4j, Micrometer, Prometheus)
+- DataLoader pattern for batching
+- Input validation on mutations
+- Environment-specific configs for dev, QA, prod
 
 ## Key Files & Directories
 - `controller/GraphQLController.java`: Main API entrypoint, routes all queries/mutations.
@@ -174,4 +174,27 @@ If you want to run both Spring Boot and Redis with Docker:
 
 ## License
 MIT
+
+## Usage
+- Start the app and access GraphQL Playground at [http://localhost:8080/graphql](http://localhost:8080/graphql)
+- Query complexity and depth are limited to prevent abuse (see `application.yml`)
+- For production, ensure all secrets and DB credentials are set via environment variables
+
+## Configuration
+- See `application.yml` and profile-specific files for details
+- JWT secret must be at least 32 chars and set via env var in production
+- GraphQL Playground and GraphiQL are disabled in production for security
+
+## Testing
+- Integration tests use `GraphQlTester` (see `GraphQLIntegrationTest.java`)
+
+## Best Practices
+- Input validation via `@Valid` on DTOs
+- Rate limiting and query complexity analysis
+- DataLoader for batching
+- Metrics via Micrometer/Prometheus
+- Secure secret management
+
+---
+For more details, see the code and configs in the repository.
 
