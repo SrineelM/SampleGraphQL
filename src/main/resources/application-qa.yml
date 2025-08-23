@@ -1,0 +1,107 @@
+# ===================================================================
+# SPRING BOOT QUALITY ASSURANCE (QA) PROFILE CONFIGURATION
+# Spring Boot 3.x Compatible
+# ===================================================================
+
+# QA/testing environment configuration.
+# Used for integration tests and QA deployments.
+
+spring:
+  config:
+    activate:
+      on-profile: qa
+
+  datasource:
+    url: ${DB_URL}
+    driver-class-name: ${DB_DRIVER}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: ${DB_DIALECT}
+
+  h2:
+    console:
+      enabled: false
+
+  redis:
+    host: ${REDIS_HOST}
+    port: ${REDIS_PORT}
+    password: ${REDIS_PASSWORD}
+
+  graphql:
+    graphiql:
+      enabled: false
+    # Prevent expensive/abusive queries in QA
+    query-depth: 15
+    query-complexity: 200
+
+# ===================================================================
+# SECURITY & AUTHENTICATION
+# ===================================================================
+security:
+  cors:
+    allowed-origins: ${CORS_ORIGINS}
+    allowed-methods: GET,POST,PUT,DELETE,OPTIONS
+    allowed-headers: "Authorization,Content-Type"
+    allow-credentials: true
+  jwt:
+    header: Authorization
+    prefix: "Bearer "
+    # JWT secret key for QA (must be set via environment variable, min 32 chars for HS256)
+    secret: ${JWT_SECRET}
+    # Access token validity in milliseconds (default: 1 hour for QA)
+    access-token-validity: ${JWT_EXPIRATION:3600000}
+    # Refresh token validity in milliseconds (default: 7 days)
+    refresh-token-validity: ${JWT_REFRESH_EXPIRATION:604800000}
+
+# ===================================================================
+# RESILIENCE4J CONFIGURATION FOR QA
+# Ensures fault-tolerance is validated in non-prod
+# ===================================================================
+resilience4j:
+  retry:
+    instances:
+      default:
+        max-attempts: 3
+        wait-duration: 500ms
+  circuitbreaker:
+    instances:
+      default:
+        sliding-window-size: 20
+        minimum-number-of-calls: 5
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 10s
+  timelimiter:
+    instances:
+      default:
+        timeout-duration: 3s
+  ratelimiter:
+    instances:
+      default:
+        limit-for-period: 10
+        limit-refresh-period: 1s
+
+# ===================================================================
+# LOGGING & OBSERVABILITY
+# ===================================================================
+logging:
+  level:
+    com.example: ${LOG_LEVEL:INFO}
+    org.springframework.security: INFO
+    org.springframework.graphql: INFO
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,env
+  tracing:
+    enabled: true
+    sampling:
+      probability: 1.0  # Full tracing in QA for debugging

@@ -1,0 +1,87 @@
+# Main Spring Boot application configuration file.
+# Defines global settings for GraphQL, database, security, and more.
+# ===================================================================
+# BASE SPRING BOOT CONFIGURATION (COMMON TO ALL PROFILES)
+#
+# Spring Boot 3.x compatible baseline configuration.
+# Profile-specific overrides (e.g., application-dev.yml) will refine these.
+# ===================================================================
+
+spring:
+  profiles:
+    active: dev # Default profile (overridden via SPRING_PROFILES_ACTIVE in containerized envs)
+  application:
+    name: graphql-poc
+  cache:
+    type: redis
+  data:
+    redis:
+      # Connection details MUST be provided in profile-specific configs
+      # (application-dev.yml, application-qa.yml, application-prod.yml)
+      client-type: lettuce # Explicitly define Redis client (Lettuce is default in Spring Boot 3.x)
+  graphql:
+    path: /graphql
+    websocket:
+      path: /graphql
+
+server:
+  port: 8080
+  shutdown: graceful
+
+security:
+  jwt:
+    header: Authorization
+    prefix: "Bearer "
+    # JWT secret key (min 32 chars for HS256). Change this in production!
+    secret: ${JWT_SECRET:2f8c7e1a9b4d6f3a8c2e5b7d9f1a3c4e6b8d0f2a4c6e8b1d3f5a7c9e2b4d6f8}
+    # Access token validity in milliseconds (default: 1 hour)
+    access-token-validity: 3600000
+    # Refresh token validity in milliseconds (default: 7 days)
+    refresh-token-validity: 604800000
+
+logging:
+  pattern:
+    console: "%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info, metrics, prometheus
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+
+# ===================================================================
+# RESILIENCE4J DEFAULTS (COMPATIBLE WITH SPRING BOOT 3.x)
+# ===================================================================
+resilience4j:
+  circuitbreaker:
+    instances:
+      userService:
+        register-health-indicator: true
+        sliding-window-size: 10
+        minimum-number-of-calls: 5
+        permitted-number-of-calls-in-half-open-state: 3
+        automatic-transition-from-open-to-half-open-enabled: true
+        wait-duration-in-open-state: 5s
+        failure-rate-threshold: 50
+        record-exceptions:
+          - java.lang.Exception
+  retry:
+    instances:
+      userService:
+        max-attempts: 3
+        wait-duration: 1s
+        enable-exponential-backoff: true
+        exponential-backoff-multiplier: 2
+  ratelimiter:
+    instances:
+      graphql:
+        limit-for-period: 100
+        limit-refresh-period: 60s
+        timeout-duration: 1s

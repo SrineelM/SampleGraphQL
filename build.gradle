@@ -1,0 +1,107 @@
+plugins {
+    id 'org.springframework.boot' version '3.2.4'
+    id 'com.diffplug.spotless' version '6.25.0'
+    id 'io.spring.dependency-management' version '1.1.4'
+    id 'java'
+}
+
+group = 'com.example'
+version = '1.0.0'
+sourceCompatibility = '21'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    // WebFlux: Reactive REST API support
+    implementation 'org.springframework.boot:spring-boot-starter-webflux'
+    // GraphQL: GraphQL API support
+    implementation 'org.springframework.boot:spring-boot-starter-graphql'
+    // JPA: Database ORM
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    // Security: Authentication/authorization
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+    // Validation: Bean validation
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    // Actuator: Health/metrics endpoints
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    // Cache: Spring caching abstraction
+    implementation 'org.springframework.boot:spring-boot-starter-cache'
+    // JWT: Token-based authentication
+    implementation 'io.jsonwebtoken:jjwt-api:0.12.3'
+    runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.3'
+    runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.3'
+
+    // Resilience4j: Circuit breaker, bulkhead, rate limiter
+    implementation 'org.springframework.cloud:spring-cloud-starter-circuitbreaker-resilience4j'
+    implementation 'io.github.resilience4j:resilience4j-bulkhead'
+    implementation 'io.github.resilience4j:resilience4j-ratelimiter'
+
+    // H2: In-memory dev database
+    runtimeOnly 'com.h2database:h2'
+    // PostgreSQL: Production database
+    runtimeOnly 'org.postgresql:postgresql'
+
+    // Redis: Caching and pub/sub
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+
+    // Prometheus: Metrics export
+    implementation 'io.micrometer:micrometer-registry-prometheus'
+
+    // Reactor Extra: Advanced reactive utilities
+    implementation 'io.projectreactor.addons:reactor-extra'
+
+    // Lombok: Boilerplate code reduction
+    compileOnly 'org.projectlombok:lombok:1.18.30'
+    annotationProcessor 'org.projectlombok:lombok:1.18.30'
+
+    // Spring Boot Test: Core test utilities
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    // GraphQL Test: GraphQL endpoint testing
+    testImplementation 'org.springframework.graphql:spring-graphql-test'
+    // Security Test: Security context testing
+    testImplementation 'org.springframework.security:spring-security-test'
+    // Reactor Test: Reactive stream assertions
+    testImplementation 'io.projectreactor:reactor-test'
+    // Testcontainers: Integration tests with containers
+    testImplementation 'org.testcontainers:junit-jupiter'
+    testImplementation 'org.testcontainers:postgresql'
+    // Mockito: Mocking framework (Jupiter + inline for final/static)
+    testImplementation 'org.mockito:mockito-junit-jupiter:5.12.0'
+    testImplementation 'org.mockito:mockito-inline:5.2.0'
+    // Awaitility: Async test utilities
+    testImplementation 'org.awaitility:awaitility:4.2.1'
+    // JsonPath: JSON query assertions
+    testImplementation 'com.jayway.jsonpath:json-path:2.9.0'
+}
+
+spotless {
+    java {
+        target 'src/**/*.java'
+        palantirJavaFormat()
+        removeUnusedImports()
+        trimTrailingWhitespace()
+        endWithNewline()
+    }
+}
+
+dependencyManagement {
+    imports {
+        mavenBom "org.springframework.cloud:spring-cloud-dependencies:2023.0.0"
+    }
+}
+
+test {
+    useJUnitPlatform()
+}
+
+tasks.named('compileJava') {
+    dependsOn 'spotlessApply'
+}

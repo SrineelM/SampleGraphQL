@@ -1,0 +1,150 @@
+# ===================================================================
+# SPRING BOOT 3.x DEVELOPMENT PROFILE CONFIGURATION
+# ===================================================================
+
+# Development environment configuration.
+# Overrides settings for local development, H2 DB, Redis, and JWT secrets.
+
+spring:
+  config:
+    activate:
+      on-profile: dev
+
+  datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: ""
+
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+        format_sql: true
+        generate_statistics: true
+        show_sql_warnings: true
+
+  sql:
+    init:
+      mode: always
+      platform: h2
+      schema-locations: classpath:schema.sql
+      data-locations: classpath:data.sql
+      continue-on-error: false
+
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+      settings:
+        web-allow-others: false
+        trace: false
+
+  cache:
+    type: redis
+    redis:
+      time-to-live: 600000
+      cache-null-values: false
+
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      database: 0
+      timeout: 2000
+
+  graphql:
+    path: /graphql
+    websocket:
+      path: /graphql-ws
+    graphiql:
+      enabled: true
+      path: /graphiql
+      subscriptions:
+        path: /graphql-ws
+
+# ===================================================================
+# JWT & SECURITY
+# ===================================================================
+jwt:
+  secret: ${SPRING_JWT_SECRET:devSecretKey} # Externalize secret
+  expiration: 86400000
+  refresh-expiration: 604800000
+
+security:
+  cors:
+    allowed-origins: "http://localhost:3000,http://localhost:8080"
+    allowed-methods: GET,POST,PUT,DELETE,OPTIONS
+    allowed-headers: "*"
+    allow-credentials: true
+    max-age: 3600
+  jwt:
+    header: Authorization
+    prefix: "Bearer "
+    # JWT secret key for development (min 32 chars for HS256). Change for team use!
+    secret: ${JWT_SECRET:devsecretkeydevsecretkeydevsecretkey1234}
+    # Access token validity in milliseconds (default: 2 hours for dev)
+    access-token-validity: 7200000
+    # Refresh token validity in milliseconds (default: 7 days)
+    refresh-token-validity: 604800000
+
+# ===================================================================
+# LOGGING & OBSERVABILITY
+# ===================================================================
+logging:
+  level:
+    com.example: DEBUG
+    org.springframework: INFO
+    org.springframework.security: INFO
+    org.springframework.graphql: INFO
+    org.springframework.data: INFO
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type: TRACE
+    org.hibernate.stat: DEBUG
+    graphql.execution: INFO
+    graphql.kickstart: INFO
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+  tracing:
+    sampling:
+      probability: 1.0
+
+# ===================================================================
+# RESILIENCE4J CONFIGURATION
+# ===================================================================
+resilience4j:
+  retry:
+    default:
+      max-attempts: 3
+      wait-duration: 500ms
+  circuitbreaker:
+    default:
+      sliding-window-size: 100
+      failure-rate-threshold: 50
+      wait-duration-in-open-state: 10s
+  timelimiter:
+    default:
+      timeout-duration: 2s
+  ratelimiter:
+    default:
+      limit-for-period: 10
+      limit-refresh-period: 1s
+      timeout-duration: 0
+  bulkhead:
+    default:
+      max-concurrent-calls: 10
+      max-wait-duration: 0
