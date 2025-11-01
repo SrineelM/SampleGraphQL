@@ -13,6 +13,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
@@ -47,6 +48,7 @@ public class PostServiceTest {
     @Mock
     private UserService userService;
 
+    @InjectMocks
     private PostService postService;
 
     private User testUser;
@@ -56,14 +58,6 @@ public class PostServiceTest {
     void setUp() {
         testUser = new User("testuser", "test@example.com", "password", User.Role.USER);
         testPost = new Post("Test Post", "Test Content", testUser);
-        // Ensure userService is injected for all tests (fixes NPE)
-        try {
-            java.lang.reflect.Field userServiceField = PostService.class.getDeclaredField("userService");
-            userServiceField.setAccessible(true);
-            userServiceField.set(postService, userService);
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to inject userService into PostService", e);
-        }
     }
 
     @Test

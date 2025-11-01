@@ -11,15 +11,25 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.test.util.ReflectionTestUtils;
 
+/**
+ * Unit tests for JwtUtil.
+ *
+ * Tests JWT token generation, validation, claim extraction, and expiration handling.
+ */
 public class JwtUtilTest {
 
     private JwtUtil jwtUtil;
     private UserDetails userDetails;
+    private static final String TEST_SECRET = "your-32-byte-secret-key-should-be-long-enough!";
 
     @BeforeEach
     void setUp() {
         jwtUtil = new JwtUtil();
+        // Initialize the secretKey field using ReflectionTestUtils
+        ReflectionTestUtils.setField(jwtUtil, "secretKey", TEST_SECRET);
+
         userDetails = User.withUsername("testuser")
                 .password("password")
                 .authorities(Collections.emptyList())
@@ -94,20 +104,17 @@ public class JwtUtilTest {
     @Test
     void testTokenExpiration() throws InterruptedException {
         // Create a custom JwtUtil with very short expiration for testing
-        JwtUtil shortExpirationJwtUtil = new JwtUtil() {
-            @Override
-            public String generateToken(UserDetails userDetails) {
-                return Jwts.builder()
-                        .subject(userDetails.getUsername())
-                        .issuedAt(new Date(System.currentTimeMillis()))
-                        .expiration(new Date(System.currentTimeMillis() + 100)) // 100ms expiration
-                        .signWith(Keys.hmacShaKeyFor("your-32-byte-secret-key-should-be-long-enough!".getBytes()))
-                        .compact();
-            }
-        };
+        JwtUtil shortExpirationJwtUtil = new JwtUtil();
+        ReflectionTestUtils.setField(shortExpirationJwtUtil, "secretKey", TEST_SECRET);
 
-        // Arrange
-        String token = shortExpirationJwtUtil.generateToken(userDetails);
+        // Override generateToken to use short expiration
+        long shortExpirationTime = System.currentTimeMillis() + 100; // 100ms
+        String token = Jwts.builder()
+                .subject(userDetails.getUsername())
+                .issuedAt(new Date(System.currentTimeMillis()))
+                .expiration(new Date(shortExpirationTime))
+                .signWith(Keys.hmacShaKeyFor(TEST_SECRET.getBytes()))
+                .compact();
 
         // Wait to ensure token expires
         Thread.sleep(200);
