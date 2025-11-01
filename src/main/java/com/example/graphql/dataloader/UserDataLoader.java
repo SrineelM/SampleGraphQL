@@ -8,8 +8,10 @@ import org.dataloader.BatchLoader;
 import org.dataloader.DataLoader;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 
 @Configuration
+@Profile("!test")
 public class UserDataLoader {
     @Bean
     public DataLoader<Long, User> userDataLoader(UserRepository userRepository) {

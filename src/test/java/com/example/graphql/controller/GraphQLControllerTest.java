@@ -14,6 +14,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import reactor.core.publisher.Mono;
 
 @ExtendWith(MockitoExtension.class)
 public class GraphQLControllerTest {
@@ -96,8 +97,7 @@ public class GraphQLControllerTest {
         String content = "New Post Content";
         String authorEmail = "test@example.com";
 
-        when(userService.getUserByEmail(authorEmail)).thenReturn(testUser);
-        when(postService.createPost(title, content, authorEmail)).thenReturn(testPost);
+        when(postService.createPostReactive(title, content, authorEmail)).thenReturn(Mono.just(testPost));
 
         // Act
         Post createdPost =
@@ -106,7 +106,6 @@ public class GraphQLControllerTest {
         // Assert
         assertNotNull(createdPost);
         assertEquals(testPost, createdPost);
-        verify(userService).getUserByEmail(authorEmail);
-        verify(postService).createPost(title, content, authorEmail);
+        verify(postService).createPostReactive(title, content, authorEmail);
     }
 }

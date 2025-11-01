@@ -10,11 +10,15 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.ComponentScan.Filter;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.FilterType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
-@DataJpaTest
+@DataJpaTest(excludeFilters = @Filter(type = FilterType.ANNOTATION, classes = Configuration.class))
 public class UserRepositoryTest {
 
     @Autowired
@@ -22,6 +26,12 @@ public class UserRepositoryTest {
 
     @Autowired
     private TestEntityManager entityManager;
+
+    @MockBean
+    private org.dataloader.DataLoaderRegistry dataLoaderRegistry;
+
+    @MockBean
+    private com.example.graphql.dataloader.UserDataLoader userDataLoader;
 
     private User testUser1;
     private User testUser2;
@@ -151,8 +161,8 @@ public class UserRepositoryTest {
     @Test
     void testDeleteUser() {
         // Act
-        userRepository.delete(testUser1);
-        Optional<User> deletedUser = userRepository.findById(testUser1.getId());
+        userRepository.delete(java.util.Objects.requireNonNull(testUser1));
+        Optional<User> deletedUser = userRepository.findById(java.util.Objects.requireNonNull(testUser1.getId()));
 
         // Assert
         assertTrue(deletedUser.isEmpty());

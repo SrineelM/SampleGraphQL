@@ -11,11 +11,15 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.ComponentScan.Filter;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.FilterType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
-@DataJpaTest
+@DataJpaTest(excludeFilters = @Filter(type = FilterType.ANNOTATION, classes = Configuration.class))
 public class PostRepositoryTest {
 
     @Autowired
@@ -23,6 +27,12 @@ public class PostRepositoryTest {
 
     @Autowired
     private TestEntityManager entityManager;
+
+    @MockBean
+    private org.dataloader.DataLoaderRegistry dataLoaderRegistry;
+
+    @MockBean
+    private com.example.graphql.dataloader.UserDataLoader userDataLoader;
 
     private User testUser;
     private Post testPost1;
@@ -135,7 +145,7 @@ public class PostRepositoryTest {
     @Test
     void testFindById() {
         // Act
-        Optional<Post> foundPost = postRepository.findById(testPost1.getId());
+        Optional<Post> foundPost = postRepository.findById(java.util.Objects.requireNonNull(testPost1.getId()));
 
         // Assert
         assertTrue(foundPost.isPresent());
@@ -145,8 +155,8 @@ public class PostRepositoryTest {
     @Test
     void testDeleteById() {
         // Act
-        postRepository.deleteById(testPost1.getId());
-        Optional<Post> deletedPost = postRepository.findById(testPost1.getId());
+        postRepository.deleteById(java.util.Objects.requireNonNull(testPost1.getId()));
+        Optional<Post> deletedPost = postRepository.findById(java.util.Objects.requireNonNull(testPost1.getId()));
 
         // Assert
         assertTrue(deletedPost.isEmpty());

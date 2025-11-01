@@ -83,7 +83,7 @@ public class GraphQlExceptionHandlerTest {
         assertEquals("CUSTOM_ERROR", extensions.get("code"));
         assertEquals(400, extensions.get("statusCode"));
         assertEquals("TEST_ERROR", extensions.get("error"));
-        assertEquals("Test details", extensions.get("details"));
+        assertEquals(List.of("Some detail"), extensions.get("details"));
     }
 
     @Test
