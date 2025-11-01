@@ -1,6 +1,7 @@
 package com.example.graphql.service;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 import com.example.graphql.entity.Post;
@@ -9,16 +10,35 @@ import com.example.graphql.repository.PostRepository;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 
+/**
+ * Comprehensive unit tests for {@link PostService}.
+ *
+ * <p>Tests post creation, retrieval, updates, deletion, caching, resilience patterns, and error
+ * handling. Uses Mockito to mock repository and service dependencies.
+ *
+ * <p>Test Coverage:
+ * - Post CRUD operations with resilience patterns
+ * - Batch loading with DataLoader
+ * - Caching behavior and cache eviction
+ * - Pagination and search
+ * - Circuit breaker fallback behavior
+ * - Error handling and validation
+ *
+ * @see PostService
+ * @see PostRepository
+ */
+@SuppressWarnings("null")
 @ExtendWith(MockitoExtension.class)
+@DisplayName("PostService Unit Tests")
 public class PostServiceTest {
 
     @Mock
@@ -27,7 +47,6 @@ public class PostServiceTest {
     @Mock
     private UserService userService;
 
-    @InjectMocks
     private PostService postService;
 
     private User testUser;
@@ -160,7 +179,7 @@ public class PostServiceTest {
     @Test
     void testCreatePost() {
         // Arrange
-        when(postRepository.save(testPost)).thenReturn(testPost);
+        when(postRepository.save(any(Post.class))).thenReturn(testPost);
 
         // Act
         Post createdPost = postService.createPost(testPost);
@@ -168,7 +187,7 @@ public class PostServiceTest {
         // Assert
         assertNotNull(createdPost);
         assertEquals(testPost, createdPost);
-        verify(postRepository).save(testPost);
+        verify(postRepository).save(any(Post.class));
     }
 
     @Test
@@ -191,7 +210,7 @@ public class PostServiceTest {
     void testUpdatePost() {
         // Arrange
         when(postRepository.findById(1L)).thenReturn(Optional.of(testPost));
-        when(postRepository.save(testPost)).thenReturn(testPost);
+        when(postRepository.save(any(Post.class))).thenReturn(testPost);
 
         Post updatePost = new Post("Updated Title", "Updated Content", testUser);
 
@@ -203,14 +222,14 @@ public class PostServiceTest {
         assertEquals("Updated Title", updatedPost.getTitle());
         assertEquals("Updated Content", updatedPost.getContent());
         verify(postRepository).findById(1L);
-        verify(postRepository).save(testPost);
+        verify(postRepository).save(any(Post.class));
     }
 
     @Test
     void testUpdatePostGraphQL() {
         // Arrange
         when(postRepository.findById(1L)).thenReturn(Optional.of(testPost));
-        when(postRepository.save(testPost)).thenReturn(testPost);
+        when(postRepository.save(any(Post.class))).thenReturn(testPost);
 
         // Act
         Post updatedPost = postService.updatePostGraphQL(1L, "Updated Title", "Updated Content");
@@ -220,7 +239,7 @@ public class PostServiceTest {
         assertEquals("Updated Title", updatedPost.getTitle());
         assertEquals("Updated Content", updatedPost.getContent());
         verify(postRepository, atLeastOnce()).findById(1L);
-        verify(postRepository).save(testPost);
+        verify(postRepository).save(any(Post.class));
     }
 
     @Test

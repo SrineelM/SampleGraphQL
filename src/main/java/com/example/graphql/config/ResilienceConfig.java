@@ -56,8 +56,10 @@ public class ResilienceConfig {
 
         // Add event logging for debugging
         registry.getEventPublisher()
-                .onEntryAdded(event -> logger.info("CircuitBreaker {} registered", event.getAddedEntry().getName()))
-                .onEntryRemoved(event -> logger.info("CircuitBreaker {} removed", event.getRemovedEntry().getName()));
+                .onEntryAdded(event -> logger.info(
+                        "CircuitBreaker {} registered", event.getAddedEntry().getName()))
+                .onEntryRemoved(event -> logger.info(
+                        "CircuitBreaker {} removed", event.getRemovedEntry().getName()));
 
         return registry;
     }
@@ -73,20 +75,20 @@ public class ResilienceConfig {
     @Bean
     public RateLimiterRegistry rateLimiterRegistry() {
         // Default configuration: 100 requests per second
-        RateLimiterConfig defaultConfig =
-                RateLimiterConfig.custom()
-                        .limitRefreshPeriod(Duration.ofSeconds(1)) // Reset every 1 second
-                        .limitForPeriod(100) // Allow 100 requests per period
-                        .timeoutDuration(Duration.ofMillis(100)) // Wait max 100ms for a permit
-                        .build();
+        RateLimiterConfig defaultConfig = RateLimiterConfig.custom()
+                .limitRefreshPeriod(Duration.ofSeconds(1)) // Reset every 1 second
+                .limitForPeriod(100) // Allow 100 requests per period
+                .timeoutDuration(Duration.ofMillis(100)) // Wait max 100ms for a permit
+                .build();
 
         RateLimiterRegistry registry = RateLimiterRegistry.of(defaultConfig);
 
         // Add event logging for debugging
         registry.getEventPublisher()
-                .onEntryAdded(event -> logger.info("RateLimiter {} registered", event.getAddedEntry().getName()))
-                .onEntryRemoved(
-                        event -> logger.info("RateLimiter {} removed", event.getRemovedEntry().getName()));
+                .onEntryAdded(event -> logger.info(
+                        "RateLimiter {} registered", event.getAddedEntry().getName()))
+                .onEntryRemoved(event -> logger.info(
+                        "RateLimiter {} removed", event.getRemovedEntry().getName()));
 
         return registry;
     }

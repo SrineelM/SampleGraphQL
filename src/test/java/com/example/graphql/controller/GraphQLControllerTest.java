@@ -100,7 +100,8 @@ public class GraphQLControllerTest {
         when(postService.createPost(title, content, authorEmail)).thenReturn(testPost);
 
         // Act
-        Post createdPost = graphQLController.createPost(title, content, authorEmail);
+        Post createdPost =
+                graphQLController.createPost(title, content, authorEmail).block(); // Convert Mono to Post for testing
 
         // Assert
         assertNotNull(createdPost);

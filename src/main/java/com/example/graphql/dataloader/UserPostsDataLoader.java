@@ -51,33 +51,30 @@ public class UserPostsDataLoader implements BatchLoader<Long, List<Post>> {
     public CompletableFuture<List<List<Post>>> load(List<Long> userIds) {
         logger.debug("Loading posts for {} users in batch", userIds.size());
 
-        return CompletableFuture.supplyAsync(
-                () -> {
-                    try {
-                        // Single database query for all users' posts
-                        List<Post> allPosts = postRepository.findByUserIdIn(userIds);
-                        logger.debug("Loaded {} posts for {} users", allPosts.size(), userIds.size());
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                // Single database query for all users' posts
+                List<Post> allPosts = postRepository.findByUserIdIn(userIds);
+                logger.debug("Loaded {} posts for {} users", allPosts.size(), userIds.size());
 
-                        // Group posts by user ID
-                        Map<Long, List<Post>> postsByUser =
-                                allPosts.stream()
-                                        .collect(Collectors.groupingBy(post -> post.getUser().getId()));
+                // Group posts by user ID
+                Map<Long, List<Post>> postsByUser = allPosts.stream()
+                        .collect(Collectors.groupingBy(post -> post.getUser().getId()));
 
-                        // Return posts in the same order as requested user IDs
-                        List<List<Post>> result = userIds.stream()
-                                .map(userId -> postsByUser.getOrDefault(userId, Collections.emptyList()))
-                                .collect(Collectors.toList());
+                // Return posts in the same order as requested user IDs
+                List<List<Post>> result = userIds.stream()
+                        .map(userId -> postsByUser.getOrDefault(userId, Collections.emptyList()))
+                        .collect(Collectors.toList());
 
-                        return (List<List<Post>>) (Object) result;
+                return (List<List<Post>>) (Object) result;
 
-                    } catch (Exception e) {
-                        logger.error("Error loading posts for users", e);
-                        // Return empty lists on error to prevent breaking the entire query
-                        return (List<List<Post>>) (Object) userIds.stream()
-                                .map(id -> Collections.emptyList())
-                                .collect(Collectors.toList());
-                    }
-                });
+            } catch (Exception e) {
+                logger.error("Error loading posts for users", e);
+                // Return empty lists on error to prevent breaking the entire query
+                return (List<List<Post>>) (Object)
+                        userIds.stream().map(id -> Collections.emptyList()).collect(Collectors.toList());
+            }
+        });
     }
 
     /**
