@@ -12,6 +12,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 /**
@@ -93,4 +94,15 @@ public interface PostRepository extends JpaRepository<Post, Long> {
      * @return The total number of posts.
      */
     long count();
+
+    /**
+     * Finds all posts for the given user IDs in batch.
+     * Used by DataLoader to prevent N+1 queries.
+     *
+     * @param userIds List of user IDs
+     * @return List of posts for all the provided user IDs
+     */
+    @EntityGraph(attributePaths = {"user"})
+    @Query("SELECT p FROM Post p WHERE p.user.id IN :userIds ORDER BY p.createdAt DESC")
+    List<Post> findByUserIdIn(@Param("userIds") List<Long> userIds);
 }

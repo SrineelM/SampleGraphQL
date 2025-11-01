@@ -16,7 +16,7 @@ public class JwtUtil {
 
     @Value("${jwt.secret:your-32-byte-secret-key-should-be-long-enough!}")
     private String secretKey;
-    
+
     private SecretKey getKey() {
         return Keys.hmacShaKeyFor(secretKey.getBytes());
     }
@@ -31,7 +31,11 @@ public class JwtUtil {
     }
 
     private Claims extractAllClaims(String token) {
-        return Jwts.parser().verifyWith(getKey()).build().parseSignedClaims(token).getPayload();
+        return Jwts.parser()
+                .verifyWith(getKey())
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
     }
 
     public boolean validateToken(String token, org.springframework.security.core.userdetails.UserDetails userDetails) {

@@ -12,7 +12,8 @@ public class GraphQLIntegrationTest {
 
     @Test
     void testUsersQuery() {
-        graphQlTester.document("{ users { id username email } }")
+        graphQlTester
+                .document("{ users { id username email } }")
                 .execute()
                 .path("users")
                 .entityList(Object.class)

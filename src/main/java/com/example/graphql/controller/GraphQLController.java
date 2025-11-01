@@ -10,8 +10,8 @@ import org.springframework.graphql.data.method.annotation.MutationMapping;
 import org.springframework.graphql.data.method.annotation.QueryMapping;
 import org.springframework.graphql.data.method.annotation.SubscriptionMapping;
 import org.springframework.stereotype.Controller;
-import reactor.core.publisher.Mono;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 @Controller
 public class GraphQLController {
@@ -103,17 +103,23 @@ public class GraphQLController {
     @QueryMapping
     public Mono<Long> countPosts() {
         return Mono.fromCallable(() -> postService.countPosts())
-            .subscribeOn(reactor.core.scheduler.Schedulers.boundedElastic());
+                .subscribeOn(reactor.core.scheduler.Schedulers.boundedElastic());
     }
 
     // --- Post mutations ---
     @MutationMapping
-    public Mono<Post> createPost(@Argument @jakarta.validation.Valid String title, @Argument @jakarta.validation.Valid String content, @Argument @jakarta.validation.Valid String authorEmail) {
+    public Mono<Post> createPost(
+            @Argument @jakarta.validation.Valid String title,
+            @Argument @jakarta.validation.Valid String content,
+            @Argument @jakarta.validation.Valid String authorEmail) {
         return postService.createPostReactive(title, content, authorEmail);
     }
 
     @MutationMapping
-    public Mono<Post> updatePost(@Argument Long id, @Argument @jakarta.validation.Valid String title, @Argument @jakarta.validation.Valid String content) {
+    public Mono<Post> updatePost(
+            @Argument Long id,
+            @Argument @jakarta.validation.Valid String title,
+            @Argument @jakarta.validation.Valid String content) {
         return postService.updatePostReactive(id, title, content);
     }
 

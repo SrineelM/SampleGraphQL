@@ -6,10 +6,10 @@ import jakarta.validation.constraints.NotBlank;
  * Input DTO for login mutation.
  */
 public class LoginInput {
-    
+
     @NotBlank(message = "Username is required")
     private String username;
-    
+
     @NotBlank(message = "Password is required")
     private String password;
 

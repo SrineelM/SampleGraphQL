@@ -18,62 +18,61 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import reactor.core.publisher.Mono;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 import reactor.core.publisher.Sinks;
 import reactor.core.scheduler.Schedulers;
 
 @Service
 public class PostService {
-/**
- * Service for post-related business logic and database operations.
- * Publishes new posts for real-time subscriptions.
- */
+    /**
+     * Service for post-related business logic and database operations.
+     * Publishes new posts for real-time subscriptions.
+     */
     private final Sinks.Many<Post> postSink = Sinks.many().multicast().onBackpressureBuffer();
 
     // --- Reactive versions ---
     public Mono<List<Post>> getAllPostsReactive() {
-        return Mono.fromCallable(() -> findAll())
-            .subscribeOn(Schedulers.boundedElastic());
+        return Mono.fromCallable(() -> findAll()).subscribeOn(Schedulers.boundedElastic());
     }
 
     public Mono<Post> getPostByIdReactive(Long id) {
-        return Mono.fromCallable(() -> getById(id))
-            .subscribeOn(Schedulers.boundedElastic());
+        return Mono.fromCallable(() -> getById(id)).subscribeOn(Schedulers.boundedElastic());
     }
 
     public Flux<Post> getPostsByAuthorEmailReactive(String email) {
-        return userService.getUserByEmailReactive(email)
-            .flatMapMany(user -> Mono.fromCallable(() -> findByUser(user))
+        return userService.getUserByEmailReactive(email).flatMapMany(user -> Mono.fromCallable(() -> findByUser(user))
                 .subscribeOn(Schedulers.boundedElastic())
                 .flatMapMany(Flux::fromIterable));
     }
 
     public Mono<Post> createPostReactive(String title, String content, String authorEmail) {
-        return userService.getUserByEmailReactive(authorEmail)
-            .flatMap(user -> Mono.fromCallable(() -> {
-                Post post = new Post(title, content, user);
-                Post saved = createPost(post);
-                postSink.tryEmitNext(saved);
-                return saved;
-            }).subscribeOn(Schedulers.boundedElastic()));
+        return userService.getUserByEmailReactive(authorEmail).flatMap(user -> Mono.fromCallable(() -> {
+                    Post post = new Post(title, content, user);
+                    Post saved = createPost(post);
+                    postSink.tryEmitNext(saved);
+                    return saved;
+                })
+                .subscribeOn(Schedulers.boundedElastic()));
     }
 
     public Mono<Post> updatePostReactive(Long id, String title, String content) {
         return Mono.fromCallable(() -> {
-            Post post = getById(id);
-            if (title != null) post.setTitle(title);
-            if (content != null) post.setContent(content);
-            return updatePost(id, post);
-        }).subscribeOn(Schedulers.boundedElastic());
+                    Post post = getById(id);
+                    if (title != null) post.setTitle(title);
+                    if (content != null) post.setContent(content);
+                    return updatePost(id, post);
+                })
+                .subscribeOn(Schedulers.boundedElastic());
     }
 
     public Mono<Boolean> deletePostReactive(Long id) {
         return Mono.fromCallable(() -> {
-            if (findById(id).isEmpty()) return false;
-            deletePost(id);
-            return true;
-        }).subscribeOn(Schedulers.boundedElastic());
+                    if (findById(id).isEmpty()) return false;
+                    deletePost(id);
+                    return true;
+                })
+                .subscribeOn(Schedulers.boundedElastic());
     }
 
     private static final Logger log = LoggerFactory.getLogger(PostService.class);

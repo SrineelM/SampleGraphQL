@@ -29,18 +29,19 @@ public class AuthController {
 
     @MutationMapping
     public Mono<AuthPayload> login(@Argument @jakarta.validation.Valid LoginInput input) {
-        return userService.findByUsernameReactive(input.getUsername())
+        return userService
+                .findByUsernameReactive(input.getUsername())
                 .cast(User.class)
                 .switchIfEmpty(Mono.error(new BadCredentialsException("Invalid username or password")))
                 .filter(user -> passwordEncoder.matches(input.getPassword(), user.getPassword()))
                 .switchIfEmpty(Mono.error(new BadCredentialsException("Invalid username or password")))
                 .map(user -> {
-                    UserDetails userDetails = org.springframework.security.core.userdetails.User
-                            .withUsername(user.getUsername())
+                    UserDetails userDetails = org.springframework.security.core.userdetails.User.withUsername(
+                                    user.getUsername())
                             .password(user.getPassword())
                             .roles(user.getRole().name())
                             .build();
-                    
+
                     String token = jwtUtil.generateToken(userDetails);
                     return new AuthPayload(token, generateRefreshToken(user), user);
                 });
@@ -48,21 +49,22 @@ public class AuthController {
 
     @MutationMapping
     public Mono<AuthPayload> register(@Argument @jakarta.validation.Valid UserInput input) {
-        return userService.createUserReactive(
-                input.getUsername(),
-                input.getEmail(),
-                input.getPassword(),
-                input.getRole() != null ? input.getRole().name() : "USER"
-        ).map(user -> {
-            UserDetails userDetails = org.springframework.security.core.userdetails.User
-                    .withUsername(user.getUsername())
-                    .password(user.getPassword())
-                    .roles(user.getRole().name())
-                    .build();
-            
-            String token = jwtUtil.generateToken(userDetails);
-            return new AuthPayload(token, generateRefreshToken(user), user);
-        });
+        return userService
+                .createUserReactive(
+                        input.getUsername(),
+                        input.getEmail(),
+                        input.getPassword(),
+                        input.getRole() != null ? input.getRole().name() : "USER")
+                .map(user -> {
+                    UserDetails userDetails = org.springframework.security.core.userdetails.User.withUsername(
+                                    user.getUsername())
+                            .password(user.getPassword())
+                            .roles(user.getRole().name())
+                            .build();
+
+                    String token = jwtUtil.generateToken(userDetails);
+                    return new AuthPayload(token, generateRefreshToken(user), user);
+                });
     }
 
     private String generateRefreshToken(User user) {
