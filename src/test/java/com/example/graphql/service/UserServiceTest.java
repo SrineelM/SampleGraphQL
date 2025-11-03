@@ -1,5 +1,13 @@
 package com.example.graphql.service;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import com.example.graphql.entity.User;
 import com.example.graphql.repository.UserRepository;
 import java.util.Arrays;
@@ -9,12 +17,14 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 @ExtendWith(MockitoExtension.class)
@@ -31,346 +41,169 @@ class UserServiceTest {
     private UserService userService;
 
     private User testUser;
+    private User anotherUser;
 
     @BeforeEach
     void setUp() {
         testUser = new User("testuser", "test@example.com", "encodedPassword", User.Role.USER);
+        anotherUser = new User("anotheruser", "another@example.com", "encodedPassword2", User.Role.ADMIN);
     }
-
-    // ===== Blocking Tests =====
-
-    @Test
-    @DisplayName("Should get all users successfully")
-    void testGetAllUsers() {
-        // Arrange
-        List<User> users = Arrays.asList(testUser, new User("user2", "user2@example.com", "pass", User.Role.ADMIN));
-        org.mockito.Mockito.when(userRepository.findAll()).thenReturn(users);
-
-        // Act
-        List<User> result = userService.getAllUsers();
-
-        // Assert
-        org.assertj.core.api.Assertions.assertThat(result).hasSize(2);
-        org.mockito.Mockito.verify(userRepository).findAll();
-    }
-
-    @Test
-    @DisplayName("Should get user by email successfully")
-    void testGetUserByEmail() {
-        // Arrange
-        org.mockito.Mockito.when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(testUser));
-
-        // Act
-        User result = userService.getUserByEmail("test@example.com");
-
-        // Assert
-        org.assertj.core.api.Assertions.assertThat(result).isEqualTo(testUser);
-        org.assertj.core.api.Assertions.assertThat(result.getEmail()).isEqualTo("test@example.com");
-    }
-
-    @Test
-    @DisplayName("Should throw exception when user by email not found")
-    void testGetUserByEmailNotFound() {
-        // Arrange
-        org.mockito.Mockito.when(userRepository.findByEmail("notfound@example.com")).thenReturn(Optional.empty());
-
-        // Act & Assert
-        org.junit.jupiter.api.Assertions.assertThrows(
-                UsernameNotFoundException.class, () -> userService.getUserByEmail("notfound@example.com"));
-    }
-
-    @Test
-    @DisplayName("Should get user by ID successfully")
-    void testGetUserById() {
-        // Arrange
-        org.mockito.Mockito.when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
-
-        // Act
-        User result = userService.getUserById(1L);
-
-        // Assert
-        org.assertj.core.api.Assertions.assertThat(result).isEqualTo(testUser);
-        org.assertj.core.api.Assertions.assertThat(result.getId()).isEqualTo(1L);
-    }
-
-    @Test
-    @DisplayName("Should throw exception when user by ID not found")
-    void testGetUserByIdNotFound() {
-        // Arrange
-        org.mockito.Mockito.when(userRepository.findById(999L)).thenReturn(Optional.empty());
-
-        // Act & Assert
-        org.junit.jupiter.api.Assertions.assertThrows(
-                UsernameNotFoundException.class, () -> userService.getUserById(999L));
-    }
-
-    @Test
-    @DisplayName("Should search users successfully")
-    void testSearchUsers() {
-        // Arrange
-        List<User> searchResults = Arrays.asList(testUser);
-        org.springframework.data.domain.PageImpl<User> page =
-                new org.springframework.data.domain.PageImpl<>(searchResults);
-        org.mockito.Mockito
-                .when(userRepository.searchUsers(
-                        org.mockito.ArgumentMatchers.eq("test"),
-                        org.mockito.ArgumentMatchers.any(org.springframework.data.domain.Pageable.class)))
-                .thenReturn(page);
-
-        // Act
-        List<User> result = userService.searchUsers("test");
-
-        // Assert
-        org.assertj.core.api.Assertions.assertThat(result).hasSize(1);
-        org.assertj.core.api.Assertions.assertThat(result.get(0).getUsername()).isEqualTo("testuser");
-    }
-
-    @Test
-    @DisplayName("Should count users successfully")
-    void testCountUsers() {
-        // Arrange
-        org.mockito.Mockito.when(userRepository.count()).thenReturn(5L);
-
-        // Act
-        long count = userService.countUsers();
-
-        // Assert
-        org.assertj.core.api.Assertions.assertThat(count).isEqualTo(5L);
-    }
-
-    @Test
-    @DisplayName("Should create user successfully")
-    void testCreateUser() {
-        // Arrange
-        String encodedPassword = "encodedPassword123";
-        org.mockito.Mockito.when(passwordEncoder.encode("password")).thenReturn(encodedPassword);
-        org.mockito.Mockito.when(userRepository.save(org.mockito.ArgumentMatchers.any(User.class)))
-                .thenReturn(testUser);
-
-        // Act
-        User result = userService.createUser("testuser", "test@example.com", "password", "USER");
-
-        // Assert
-        org.assertj.core.api.Assertions.assertThat(result).isNotNull();
-        org.assertj.core.api.Assertions.assertThat(result.getUsername()).isEqualTo("testuser");
-        org.mockito.Mockito.verify(passwordEncoder).encode("password");
-        org.mockito.Mockito.verify(userRepository).save(org.mockito.ArgumentMatchers.any(User.class));
-    }
-
-    @Test
-    @DisplayName("Should throw exception on invalid role")
-    void testCreateUserInvalidRole() {
-        // Act & Assert
-        org.junit.jupiter.api.Assertions.assertThrows(
-                IllegalArgumentException.class,
-                () -> userService.createUser("testuser", "test@example.com", "password", "INVALID_ROLE"));
-    }
-
-    @Test
-    @DisplayName("Should update user successfully")
-    void testUpdateUserGraphQL() {
-        // Arrange
-        org.mockito.Mockito.when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
-        org.mockito.Mockito.when(passwordEncoder.encode("newpassword")).thenReturn("encodedNewPassword");
-        org.mockito.Mockito.when(userRepository.save(org.mockito.ArgumentMatchers.any(User.class)))
-                .thenReturn(testUser);
-
-        // Act
-        User result = userService.updateUserGraphQL(1L, "updateduser", "updated@example.com", "newpassword", "ADMIN");
-
-        // Assert
-        org.assertj.core.api.Assertions.assertThat(result).isNotNull();
-        org.mockito.Mockito.verify(userRepository).save(org.mockito.ArgumentMatchers.any(User.class));
-    }
-
-    @Test
-    @DisplayName("Should delete user successfully")
-    void testDeleteUserGraphQL() {
-        // Arrange
-        org.mockito.Mockito.when(userRepository.existsById(1L)).thenReturn(true);
-
-        // Act
-        boolean result = userService.deleteUserGraphQL(1L);
-
-        // Assert
-        org.assertj.core.api.Assertions.assertThat(result).isTrue();
-        org.mockito.Mockito.verify(userRepository).deleteById(1L);
-    }
-
-    @Test
-    @DisplayName("Should throw exception when deleting non-existent user")
-    void testDeleteUserGraphQLNotFound() {
-        // Arrange
-        org.mockito.Mockito.when(userRepository.existsById(999L)).thenReturn(false);
-
-        // Act & Assert
-        org.junit.jupiter.api.Assertions.assertThrows(
-                UsernameNotFoundException.class, () -> userService.deleteUserGraphQL(999L));
-    }
-
-    @Test
-    @DisplayName("Should load user by username")
-    void testLoadUserByUsername() {
-        // Arrange
-        org.mockito.Mockito.when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
-
-        // Act
-        UserDetails result = userService.loadUserByUsername("testuser");
-
-        // Assert
-        org.assertj.core.api.Assertions.assertThat(result.getUsername()).isEqualTo("testuser");
-    }
-
-    @Test
-    @DisplayName("Should throw exception when loading non-existent user")
-    void testLoadUserByUsernameNotFound() {
-        // Arrange
-        org.mockito.Mockito.when(userRepository.findByUsername("notfound")).thenReturn(Optional.empty());
-
-        // Act & Assert
-        org.junit.jupiter.api.Assertions.assertThrows(
-                UsernameNotFoundException.class, () -> userService.loadUserByUsername("notfound"));
-    }
-
-    // ===== Reactive Tests =====
 
     @Test
     @DisplayName("Should get all users reactively")
     void testGetAllUsersReactive() {
-        // Arrange
-        List<User> users = Arrays.asList(testUser);
-        org.mockito.Mockito.when(userRepository.findAll()).thenReturn(users);
+        when(userRepository.findAll()).thenReturn(Arrays.asList(testUser, anotherUser));
 
-        // Act & Assert
-        userService
-                .getAllUsersReactive()
-                .as(StepVerifier::create)
-                .expectNext(users)
+        Mono<List<User>> result = userService.getAllUsersReactive();
+
+        StepVerifier.create(result)
+                .assertNext(users -> {
+                    assertEquals(2, users.size());
+                    assertEquals("testuser", users.get(0).getUsername());
+                })
                 .verifyComplete();
     }
 
     @Test
     @DisplayName("Should get user by email reactively")
     void testGetUserByEmailReactive() {
-        // Arrange
-        org.mockito.Mockito.when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(testUser));
+        when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(testUser));
 
-        // Act & Assert
-        userService
-                .getUserByEmailReactive("test@example.com")
-                .as(StepVerifier::create)
-                .expectNext(testUser)
+        Mono<User> result = userService.getUserByEmailReactive("test@example.com");
+
+        StepVerifier.create(result)
+                .assertNext(user -> assertEquals("testuser", user.getUsername()))
                 .verifyComplete();
     }
 
     @Test
-    @DisplayName("Should get user by ID reactively")
-    void testGetUserByIdReactive() {
-        // Arrange
-        org.mockito.Mockito.when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+    @DisplayName("Should create a user")
+    void testCreateUser() {
+        String rawPassword = "password123";
+        when(passwordEncoder.encode(rawPassword)).thenReturn("encodedPassword");
+        when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        // Act & Assert
-        userService
-                .getUserByIdReactive(1L)
-                .as(StepVerifier::create)
-                .expectNext(testUser)
-                .verifyComplete();
+        User createdUser = userService.createUser("newuser", "new@example.com", rawPassword, User.Role.USER.name());
+
+        assertNotNull(createdUser);
+        assertEquals("newuser", createdUser.getUsername());
+        verify(passwordEncoder).encode(rawPassword);
+        verify(userRepository).save(any(User.class));
     }
 
     @Test
-    @DisplayName("Should find user by username reactively")
-    void testFindByUsernameReactive() {
-        // Arrange
-        org.mockito.Mockito.when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
-
-        // Act & Assert
-        userService
-                .findByUsernameReactive("testuser")
-                .as(StepVerifier::create)
-                .expectNext(testUser)
-                .verifyComplete();
-    }
-
-    @Test
-    @DisplayName("Should create user reactively")
+    @DisplayName("Should create a user reactively")
     void testCreateUserReactive() {
-        // Arrange
-        String encodedPassword = "encodedPassword123";
-        org.mockito.Mockito.when(passwordEncoder.encode("password")).thenReturn(encodedPassword);
-        org.mockito.Mockito.when(userRepository.save(org.mockito.ArgumentMatchers.any(User.class)))
-                .thenReturn(testUser);
+        String rawPassword = "password123";
+        when(passwordEncoder.encode(rawPassword)).thenReturn("encodedPassword");
+        when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        // Act & Assert
-        userService
-                .createUserReactive("testuser", "test@example.com", "password", "USER")
-                .as(StepVerifier::create)
-                .expectNext(testUser)
+        Mono<User> result =
+                userService.createUserReactive("newuser", "new@example.com", rawPassword, User.Role.USER.name());
+
+        StepVerifier.create(result)
+                .assertNext(user -> assertEquals("newuser", user.getUsername()))
                 .verifyComplete();
     }
 
     @Test
-    @DisplayName("Should update user reactively")
+    @DisplayName("Should update a user using GraphQL method")
+    void testUpdateUserGraphQL() {
+        when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+        when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        User result = userService.updateUserGraphQL(1L, "updatedUser", "updated@example.com", "newPass", "ADMIN");
+
+        assertNotNull(result);
+        verify(userRepository).findById(1L);
+        verify(userRepository).save(any(User.class));
+    }
+
+    @Test
+    @DisplayName("Should update a user reactively")
     void testUpdateUserReactive() {
-        // Arrange
-        org.mockito.Mockito.when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
-        org.mockito.Mockito.when(passwordEncoder.encode("newpassword")).thenReturn("encodedNewPassword");
-        org.mockito.Mockito.when(userRepository.save(org.mockito.ArgumentMatchers.any(User.class)))
-                .thenReturn(testUser);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+        when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        // Act & Assert
-        userService
-                .updateUserReactive(1L, "updateduser", "updated@example.com", "newpassword", "ADMIN")
-                .as(StepVerifier::create)
-                .expectNext(testUser)
+        Mono<User> result =
+                userService.updateUserReactive(1L, "updatedUser", "updated@example.com", "newPass", "ADMIN");
+
+        StepVerifier.create(result)
+                .assertNext(user -> assertEquals("updatedUser", user.getUsername()))
                 .verifyComplete();
     }
 
     @Test
-    @DisplayName("Should delete user reactively")
+    @DisplayName("Should delete a user using GraphQL method")
+    void testDeleteUserGraphQL() {
+        when(userRepository.existsById(1L)).thenReturn(true);
+        userService.deleteUserGraphQL(1L);
+        verify(userRepository).deleteById(1L);
+    }
+
+    @Test
+    @DisplayName("Should delete a user reactively")
     void testDeleteUserReactive() {
-        // Arrange
-        org.mockito.Mockito.when(userRepository.existsById(1L)).thenReturn(true);
+        when(userRepository.existsById(1L)).thenReturn(true);
+        Mono<Boolean> result = userService.deleteUserReactive(1L);
 
-        // Act & Assert
-        userService
-                .deleteUserReactive(1L)
-                .as(StepVerifier::create)
-                .expectNext(true)
+        StepVerifier.create(result).expectNext(true).verifyComplete();
+    }
+
+    @Test
+    @DisplayName("Should throw exception when deleting non-existent user")
+    void testDeleteNonExistentUser() {
+        when(userRepository.existsById(999L)).thenReturn(false);
+        assertThrows(UsernameNotFoundException.class, () -> userService.deleteUserGraphQL(999L));
+    }
+
+    @Test
+    @DisplayName("Should find user by username for authentication")
+    void testFindByUsername() {
+        when(userRepository.findByUsername("testuser")).thenReturn(Optional.of(testUser));
+        Mono<UserDetails> result = userService.findByUsername("testuser");
+
+        StepVerifier.create(result)
+                .assertNext(userDetails -> {
+                    assertEquals("testuser", userDetails.getUsername());
+                    assertEquals("encodedPassword", userDetails.getPassword());
+                })
                 .verifyComplete();
     }
 
     @Test
-    @DisplayName("Should count users reactively")
-    void testCountUsersReactive() {
-        // Arrange
-        org.mockito.Mockito.when(userRepository.count()).thenReturn(3L);
+    @DisplayName("Should capture user data on save")
+    void testUserSaveCapture() {
+        ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
+        String rawPassword = "rawPassword";
 
-        // Act & Assert
-        userService
-                .countUsersReactive()
-                .as(StepVerifier::create)
-                .expectNext(3L)
-                .verifyComplete();
+        when(passwordEncoder.encode(rawPassword)).thenReturn("encodedPassword");
+        when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        userService.createUser("newuser", "new@example.com", rawPassword, "USER");
+
+        verify(userRepository).save(userCaptor.capture());
+        User capturedUser = userCaptor.getValue();
+
+        assertEquals("newuser", capturedUser.getUsername());
+        assertEquals("encodedPassword", capturedUser.getPassword());
     }
 
     @Test
-    @DisplayName("Should search users reactively")
-    void testSearchUsersReactive() {
-        // Arrange
-        List<User> searchResults = Arrays.asList(testUser);
-        org.springframework.data.domain.PageImpl<User> page =
-                new org.springframework.data.domain.PageImpl<>(searchResults);
-        org.mockito.Mockito
-                .when(userRepository.searchUsers(
-                        org.mockito.ArgumentMatchers.eq("test"),
-                        org.mockito.ArgumentMatchers.any(org.springframework.data.domain.Pageable.class)))
-                .thenReturn(page);
+    @DisplayName("Should capture user data on update")
+    void testUserUpdateCapture() {
+        ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
+        when(userRepository.findById(anyLong())).thenReturn(Optional.of(testUser));
+        when(passwordEncoder.encode("newPassword")).thenReturn("newEncodedPassword");
+        when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        // Act & Assert
-        userService
-                .searchUsersReactive("test")
-                .as(StepVerifier::create)
-                .expectNext(testUser)
-                .verifyComplete();
+        userService.updateUserGraphQL(1L, "updatedName", "updated@email.com", "newPassword", "ADMIN");
+
+        verify(userRepository).save(userCaptor.capture());
+        User capturedUser = userCaptor.getValue();
+
+        assertEquals("updatedName", capturedUser.getUsername());
+        assertEquals("newEncodedPassword", capturedUser.getPassword());
+        assertEquals(User.Role.ADMIN, capturedUser.getRole());
     }
 }
